@@ -1,6 +1,7 @@
 import numpy as np
 import tensorflow as tf
 from gym.spaces import Discrete, Box, MultiDiscrete
+from baselines.spaces import Bin_Discrete
 
 def observation_placeholder(ob_space, batch_size=None, name='Ob'):
     '''
@@ -21,7 +22,7 @@ def observation_placeholder(ob_space, batch_size=None, name='Ob'):
     tensorflow placeholder tensor
     '''
 
-    assert isinstance(ob_space, Discrete) or isinstance(ob_space, Box) or isinstance(ob_space, MultiDiscrete), \
+    assert isinstance(ob_space, (Discrete, Box, MultiDiscrete, Bin_Discrete)), \
         'Can only deal with Discrete and Box observation spaces for now'
 
     dtype = ob_space.dtype
@@ -59,6 +60,8 @@ def encode_observation(ob_space, placeholder):
         placeholder = tf.cast(placeholder, tf.int32)
         one_hots = [tf.to_float(tf.one_hot(placeholder[..., i], ob_space.nvec[i])) for i in range(placeholder.shape[-1])]
         return tf.concat(one_hots, axis=-1)
+    elif isinstance(ob_space, Bin_Discrete):
+        return tf.to_float(tf.one_hot(placeholder, ob_space.n))
     else:
         raise NotImplementedError
 

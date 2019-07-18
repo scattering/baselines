@@ -56,6 +56,8 @@ def train(args, extra_args):
 
     total_timesteps = int(args.num_timesteps)
     seed = args.seed
+    print('build args', args)
+    env_kwargs={'storspot': args.storspot}
 
     learn = get_learn_function(args.alg)
     alg_kwargs = get_learn_function_defaults(args.alg, env_type)
@@ -107,13 +109,18 @@ def build_env(args):
                                intra_op_parallelism_threads=1,
                                inter_op_parallelism_threads=1)
         config.gpu_options.allow_growth = True
-        get_session(config=config)
+        sess = get_session(config=config)
 
         flatten_dict_observations = alg not in {'her'}
-        env = make_vec_env(env_id, env_type, args.num_env or 1, seed, reward_scale=args.reward_scale, flatten_dict_observations=flatten_dict_observations)
+        env = make_vec_env(env_id, env_type, args.num_env or 1, seed, reward_scale=args.reward_scale, flatten_dict_observations=flatten_dict_observations, env_kwargs=env_kwargs)
 
         if env_type == 'mujoco':
             env = VecNormalize(env, use_tf=True)
+        print('writing session graph--I HOPEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE')
+        print(sess.graph)
+        outfile = osp.join(args.storspot, 'tf') if args.storspot else './tf'
+        file_writer = tf.summary.FileWriter(outfile, sess.graph)
+        summary_op = tf.summary.merge_all()
 
     return env
 
@@ -198,6 +205,34 @@ def configure_logger(log_path, **kwargs):
     else:
         logger.configure(**kwargs)
 
+def profile(fn, *args, **kw):
+    """
+    Profile a function called with the given arguments.
+    """
+    import cProfile
+    import pstats
+
+    print("in profile", fn, args, kw)
+    result = [None]
+    def call():
+        try:
+            result[0] = fn(*args, **kw)
+        except BaseException as exc:
+            result.append(exc)
+    datafile = 'profile.out'
+    cProfile.runctx('call()', dict(call=call), {}, datafile)
+    stats = pstats.Stats(datafile)
+    # order='calls'
+    order = 'cumulative'
+    # order='pcalls'
+    # order='time'
+    stats.sort_stats(order)
+    stats.print_stats()
+    os.unlink(datafile)
+    if len(result) > 1:
+        raise result[1]
+    return result[0]
+
 
 def main(args):
     # configure logger, disable logging in child MPI processes (with rank > 0)
@@ -213,7 +248,10 @@ def main(args):
         rank = MPI.COMM_WORLD.Get_rank()
         configure_logger(args.log_path, format_strs=[])
 
-    model, env = train(args, extra_args)
+    if args.profile:
+        model, env = profile(train, args, extra_args)
+    else:
+        model, env = train(args, extra_args)
 
     if args.save_path is not None and rank == 0:
         save_path = osp.expanduser(args.save_path)
@@ -235,7 +273,7 @@ def main(args):
 
             obs, rew, done, _ = env.step(actions)
             episode_rew += rew[0] if isinstance(env, VecEnv) else rew
-            env.render()
+            #env.render()
             done = done.any() if isinstance(done, np.ndarray) else done
             if done:
                 print('episode_rew={}'.format(episode_rew))

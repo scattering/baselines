@@ -20,7 +20,7 @@ class DummyVecEnv(VecEnv):
         VecEnv.__init__(self, len(env_fns), env.observation_space, env.action_space)
         obs_space = env.observation_space
         self.keys, shapes, dtypes = obs_space_info(obs_space)
-
+        #print("shapes" + str(shapes))
         self.buf_obs = { k: np.zeros((self.num_envs,) + tuple(shapes[k]), dtype=dtypes[k]) for k in self.keys }
         self.buf_dones = np.zeros((self.num_envs,), dtype=np.bool)
         self.buf_rews  = np.zeros((self.num_envs,), dtype=np.float32)
@@ -64,7 +64,17 @@ class DummyVecEnv(VecEnv):
     def _save_obs(self, e, obs):
         for k in self.keys:
             if k is None:
+                
+                #print("keys " + str(self.keys), type(self.keys[0]))
+                #print("num_envs " + str(self.num_envs))
+                #print("obs " + str(obs), type(obs), obs.shape)
+                #print("length obs " + str(len(obs)))
+                #print("k "+ str(k))
+                #print("e " + str(e))
+                #print("buf_obs " + str(self.buf_obs), self.buf_obs[k].shape)
                 self.buf_obs[k][e] = obs
+                #print("buf_obs_after " + str(self.buf_obs))
+                break
             else:
                 self.buf_obs[k][e] = obs[k]
 

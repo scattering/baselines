@@ -31,7 +31,7 @@ class Model(object):
         - Save load the model
     """
     def __init__(self, policy, env, nsteps,
-            ent_coef=0.01, vf_coef=0.5, max_grad_norm=0.5, lr=7e-4,
+            ent_coef=0.01, vf_coef=0.5, max_grad_norm=0.5, lr=7e-6,
             alpha=0.99, epsilon=1e-5, total_timesteps=int(80e6), lrschedule='linear'):
 
         sess = tf_util.get_session()

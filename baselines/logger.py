@@ -156,6 +156,7 @@ class TensorBoardOutputFormat(KVWriter):
         self.writer = pywrap_tensorflow.EventsWriter(compat.as_bytes(path))
 
     def writekvs(self, kvs):
+        print("writekvs")
         def summary_val(k, v):
             kwargs = {'tag': k, 'simple_value': float(v)}
             return self.tf.Summary.Value(**kwargs)
