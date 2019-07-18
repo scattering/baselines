@@ -1,6 +1,7 @@
 import re
 from setuptools import setup, find_packages
 import sys
+import platform
 
 if sys.version_info.major != 3:
     print('This Python is only compatible with Python 3, but you are running '
@@ -26,19 +27,24 @@ for group_name in extras:
     all_deps += extras[group_name]
 
 extras['all'] = all_deps
-
-setup(name='baselines',
-      packages=[package for package in find_packages()
-                if package.startswith('baselines')],
-      install_requires=[
+install_requires = [
           'gym>=0.10.0, <1.0.0',
           'scipy',
           'tqdm',
           'joblib',
           'cloudpickle',
           'click',
-          'opencv-python'
-      ],
+          'opencv-python',
+          'tensorflow>=1.4',
+      ]
+# opencv is not available for PowerPC from pip
+if platform.machine().startswith('ppc'):
+    install_requires.remove('opencv-python')
+
+setup(name='baselines',
+      packages=[package for package in find_packages()
+                if package.startswith('baselines')],
+      install_requires=install_requires,
       extras_require=extras,
       description='OpenAI baselines: high quality implementations of reinforcement learning algorithms',
       author='OpenAI',
