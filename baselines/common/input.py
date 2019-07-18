@@ -23,7 +23,7 @@ def observation_placeholder(ob_space, batch_size=None, name='Ob'):
     '''
 
     assert isinstance(ob_space, (Discrete, Box, MultiDiscrete, Bin_Discrete)), \
-        'Can only deal with Discrete and Box observation spaces for now'
+        'Can only deal with Discrete and Box observation spaces for now, not %s' %ob_space
 
     dtype = ob_space.dtype
     if dtype == np.int8:
