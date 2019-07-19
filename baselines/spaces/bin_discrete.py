@@ -1,7 +1,8 @@
-import numpy as np
-from .space import Space
 from itertools import repeat
 
+import numpy as np
+
+from gym.spaces.space import Space
 
 class Bin_Discrete(Space):
     """A binary array of discrete spaces in :math:`\{ 0, 1, \dots, n-1 \}`. 
@@ -38,7 +39,7 @@ class Bin_Discrete(Space):
         
 
     def __repr__(self):
-        return "BinDiscrete(%d)" % self.n
+        return "Bin_Discrete(%d)" % self.n
 
     def __eq__(self, other):
         return isinstance(other, Bin_Discrete) and self.n == other.n
