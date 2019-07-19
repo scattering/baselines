@@ -57,7 +57,7 @@ def train(args, extra_args):
     total_timesteps = int(args.num_timesteps)
     seed = args.seed
     print('build args', args)
-    env_kwargs={'storspot': args.storspot}
+    env_kwargs = {'storspot': args.storspot}
 
     learn = get_learn_function(args.alg)
     alg_kwargs = get_learn_function_defaults(args.alg, env_type)
@@ -91,6 +91,7 @@ def build_env(args):
     nenv = args.num_env or ncpu
     alg = args.alg
     seed = args.seed
+    env_kwargs = {'storspot': args.storspot}
 
     env_type, env_id = get_env_type(args)
 
