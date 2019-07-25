@@ -20,7 +20,7 @@ class DummyVecEnv(VecEnv):
         VecEnv.__init__(self, len(env_fns), env.observation_space, env.action_space)
         obs_space = env.observation_space
         self.keys, shapes, dtypes = obs_space_info(obs_space)
-        #print("shapes" + str(shapes))
+        print("shapes" + str(shapes))
         self.buf_obs = { k: np.zeros((self.num_envs,) + tuple(shapes[k]), dtype=dtypes[k]) for k in self.keys }
         self.buf_dones = np.zeros((self.num_envs,), dtype=np.bool)
         self.buf_rews  = np.zeros((self.num_envs,), dtype=np.float32)
@@ -47,7 +47,7 @@ class DummyVecEnv(VecEnv):
             action = self.actions[e]
             # if isinstance(self.envs[e].action_space, spaces.Discrete):
             #    action = int(action)
-
+            
             obs, self.buf_rews[e], self.buf_dones[e], self.buf_infos[e] = self.envs[e].step(action)
             if self.buf_dones[e]:
                 obs = self.envs[e].reset()
@@ -65,13 +65,15 @@ class DummyVecEnv(VecEnv):
         for k in self.keys:
             if k is None:
                 
-                #print("keys " + str(self.keys), type(self.keys[0]))
-                #print("num_envs " + str(self.num_envs))
-                #print("obs " + str(obs), type(obs), obs.shape)
-                #print("length obs " + str(len(obs)))
-                #print("k "+ str(k))
-                #print("e " + str(e))
-                #print("buf_obs " + str(self.buf_obs), self.buf_obs[k].shape)
+                '''
+                print("keys " + str(self.keys), type(self.keys[0]))
+                print("num_envs " + str(self.num_envs))
+                print("obs " + str(obs))
+                print("length obs " + str(len(obs)))
+                print("k "+ str(k))
+                print("e " + str(e))
+                print("buf_obs " + str(self.buf_obs), self.buf_obs[k].shape)
+                '''
                 self.buf_obs[k][e] = obs
                 #print("buf_obs_after " + str(self.buf_obs))
                 break

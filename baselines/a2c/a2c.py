@@ -1,6 +1,7 @@
 import time
 import functools
 import tensorflow as tf
+import numpy as np
 
 from baselines import logger
 
@@ -13,6 +14,7 @@ from baselines.a2c.utils import Scheduler, find_trainable_variables
 from baselines.a2c.runner import Runner
 from baselines.ppo2.ppo2 import safemean
 from collections import deque
+from gym.spaces import Discrete
 
 from tensorflow import losses
 
@@ -33,11 +35,10 @@ class Model(object):
     def __init__(self, policy, env, nsteps,
             ent_coef=0.01, vf_coef=0.5, max_grad_norm=0.5, lr=7e-6,
             alpha=0.99, epsilon=1e-5, total_timesteps=int(80e6), lrschedule='linear'):
-
+        self.action_mask = None
         sess = tf_util.get_session()
         nenvs = env.num_envs
         nbatch = nenvs*nsteps
-
 
         with tf.variable_scope('a2c_model', reuse=tf.AUTO_REUSE):
             # step_model is used for sampling
@@ -87,17 +88,37 @@ class Model(object):
 
         lr = Scheduler(v=lr, nvalues=total_timesteps, schedule=lrschedule)
 
-        def train(obs, states, rewards, masks, actions, values):
+        def train(obs, states, rewards, masks, actions, values, action_masks=None):
             # Here we calculate advantage A(s,a) = R + yV(s') - V(s)
             # rewards = R + yV(s')
             advs = rewards - values
             for step in range(len(obs)):
                 cur_lr = lr.value()
+            #print("observations", obs)
+            print("has this hkl been chosen?")
+            for i in range (0, 4):
+                if obs[i][actions[i]] == 1:
+                    print("YOU HAVE CHOSEN AN INVALID ACTION!")
+                    print("the action is ", actions[i], " and you should feel ashamed.")
+            
+            print("")
+            #print("acs", actions)
+            if action_masks is not None:
+                action_masks = np.array(action_masks, dtype=np.bool).reshape(nsteps, len(obs[0]))
 
             td_map = {train_model.X:obs, A:actions, ADV:advs, R:rewards, LR:cur_lr}
             if states is not None:
                 td_map[train_model.S] = states
                 td_map[train_model.M] = masks
+                if isinstance(self.env.action_space, Discrete) and action_masks is None:
+                    action_masks = np.ones((self.n_envs, len(obs[0])), np.bool)
+                elif isinstance(self.train_model.ac_space, Discrete) and action_masks is not None:
+                    action_masks = action_masks[-(states.shape[0]):]
+                    
+             #if isinstance(self.env.action_space, Discrete) and action_masks is None:
+            if action_masks is None:
+                action_masks = np.ones((nsteps, len(obs[0])), np.bool)
+            td_map[self.step_model._action_mask_ph] = action_masks
             policy_loss, value_loss, policy_entropy, _ = sess.run(
                 [pg_loss, vf_loss, entropy, _train],
                 td_map
@@ -192,10 +213,12 @@ def learn(
     # Instantiate the model object (that creates step_model and train_model)
     model = Model(policy=policy, env=env, nsteps=nsteps, ent_coef=ent_coef, vf_coef=vf_coef,
         max_grad_norm=max_grad_norm, lr=lr, alpha=alpha, epsilon=epsilon, total_timesteps=total_timesteps, lrschedule=lrschedule)
+    #print("                         made model")
     if load_path is not None:
         model.load(load_path)
 
     # Instantiate the runner object
+    #print("                         Starting Runner")
     runner = Runner(env, model, nsteps=nsteps, gamma=gamma)
     epinfobuf = deque(maxlen=100)
 
@@ -208,9 +231,12 @@ def learn(
     for update in range(1, total_timesteps//nbatch+1):
         # Get mini batch of experiences
         obs, states, rewards, masks, actions, values, epinfos = runner.run()
-        epinfobuf.extend(epinfos)
+        #epinfobuf.extend(epinfos)
+        action_masks = epinfos[0]
+        #print("action_masks in train: ", action_masks)
+        epinfobuf.extend(epinfos[1:])
 
-        policy_loss, value_loss, policy_entropy = model.train(obs, states, rewards, masks, actions, values)
+        policy_loss, value_loss, policy_entropy = model.train(obs, states, rewards, masks, actions, values, action_masks=action_masks)
         nseconds = time.time()-tstart
 
         # Calculate the fps (frame per second)
