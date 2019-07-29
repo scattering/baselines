@@ -39,7 +39,7 @@ class PolicyWithValue(object):
         self.state = tf.constant([])
         self.initial_state = None
         self.__dict__.update(tensors)
-        self._action_mask_ph = tf.placeholder(dtype=tf.bool, shape=(5, 198),
+        self._action_mask_ph = tf.placeholder(dtype=tf.bool, shape=(5, 5),
                                                       name="action_mask_ph")
         vf_latent = vf_latent if vf_latent is not None else latent
 
@@ -84,8 +84,10 @@ class PolicyWithValue(object):
         #print("action mask: ", action_mask)
         if action_mask is None:
             action_mask = np.ones((5, len(observation[0])), dtype=np.bool)
+        #print(action_mask)
         #feed_dict = {actions: np.ones((len(observation[0]))), masks: np.array(mask), self.X: adjust_shape(self.X, observation)}
         #observation = np.zeros(2)
+        #self._action_mask_ph = tshow(self._action_mask_ph, "action mask ph in _evaluate")
         feed_dict = {self.X: adjust_shape(self.X, observation), self._action_mask_ph: action_mask} #messing things up for other algs
         for inpt_name, data in extra_feed.items():
             if inpt_name in self.__dict__.keys():
@@ -143,6 +145,9 @@ class PolicyWithValue(object):
         if state.size == 0:
             state = None
         return a, v, state, neglogp
+        
+    def giveBatch(self, batch):
+        self.pd.giveBatch(batch)
 
     def value(self, ob, *args, **kwargs):
         """
@@ -166,6 +171,11 @@ class PolicyWithValue(object):
 
     def load(self, load_path):
         tf_util.load_state(load_path, sess=self.sess)
+        
+def tshow(tensor, tag=None):
+    with tf.control_dependencies([tf.print(">>>>", tag if tag else tensor.name, tensor)]):
+        # generate a new name for the result tensor by tagging the existing name with _print
+        return tf.identity(tensor, name=tensor.name.split(':',1)[0]+"_print")
 
 def build_policy(env, policy_network, value_network=None,  normalize_observations=False, estimate_q=False, **policy_kwargs):
     if isinstance(policy_network, str):

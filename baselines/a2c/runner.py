@@ -29,8 +29,9 @@ class Runner(AbstractEnvRunner):
             # We already have self.obs because Runner superclass run self.obs[:] = env.reset() on init
             #print("                     model.stepping")
             # print(self.nsteps)
-            #print("action mask in runner: ", self.model.action_mask)
+            #print("action mask in runner: ", self.model.action_mask)            
             actions, values, states, _ = self.model.step(self.obs, S=self.states, M=self.dones, action_mask=self.model.action_mask)
+            self.model.batch(n)
             #print("                     model.done stepping")
 
             # Append the experiences
@@ -52,7 +53,7 @@ class Runner(AbstractEnvRunner):
                 if info.get('valid_actions') is not None:
                     self.model.action_mask = np.array(info.get('valid_actions'), dtype=np.bool)
                     epinfos[0] = self.model.action_mask
-                    #print("action mask:         ", self.model.action_mask)
+                    print("action mask:         ", self.model.action_mask)
                     #epinfos[0].append(self.model.action_mask)
                 else:
                     # otherwise, assume all actions are valid

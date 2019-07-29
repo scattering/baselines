@@ -153,13 +153,14 @@ class BernoulliPdType(PdType):
 class CategoricalPd(Pd):
     def __init__(self, logits):
         self.logits = logits
+        self.batch = 0
     def flatparam(self):
         return self.logits
     def mode(self):
         #return tf.argmax(self.logits, axis=-1)
         try:
             valid_actions = tf.get_default_graph().get_tensor_by_name("a2c_model/action_mask_ph:0")
-            return tf.argmax(tf.boolean_mask(self.logits, valid_actions, axis=1), axis=-1)
+            return tf.argmax(tf.boolean_mask(self.logits, valid_actions[0], axis=1), axis=-1)
         except KeyError:
             return tf.argmax(self.logits, axis=-1)
 
@@ -188,9 +189,12 @@ class CategoricalPd(Pd):
         one_hot_actions = tf.one_hot(x, self.logits.get_shape().as_list()[-1])
         try:
             valid_actions = tf.get_default_graph().get_tensor_by_name("a2c_model/action_mask_ph:0")
-            return tf.nn.softmax_cross_entropy_with_logits_v2(
-                logits=tf.boolean_mask(self.logits, valid_actions[0], axis=1),
-                labels=tf.boolean_mask(tf.stop_gradient(one_hot_actions), valid_actions[0], axis=1))
+            #valid_actions = tshow(valid_actions, "valid actions in neglop")
+            tensor = tf.nn.softmax_cross_entropy_with_logits_v2(
+                    logits=tf.boolean_mask(self.logits, valid_actions[0], axis=1),
+                    labels=tf.boolean_mask(tf.stop_gradient(one_hot_actions), valid_actions[0], axis=1))
+            #tensor = tshow(tensor, "tensor in neglop")
+            return tensor
         except KeyError:
             return tf.nn.softmax_cross_entropy_with_logits_v2(
                 logits=self.logits,
@@ -217,13 +221,44 @@ class CategoricalPd(Pd):
         #return tf.argmax(self.logits - tf.log(-tf.log(u)), axis=-1)
         try:
             valid_actions = tf.get_default_graph().get_tensor_by_name("a2c_model/action_mask_ph:0")
-            return tf.argmax(tf.boolean_mask(self.logits - tf.log(-tf.log(uniform)), valid_actions[0], axis=1), axis=-1)
+            self.logits = tshow(self.logits, "logits in sample")
+            valid_actions= tshow(valid_actions, "valid actions in sample")
+            
+            tensor = tf.boolean_mask(self.logits - tf.log(-tf.log(uniform)), valid_actions[0], axis=1)
+            # tf_list =  []
+            # for i in range(tf.TensorShape(tensor[0])):
+                # if valid_actions[0][i] == tf.Variable(1):
+                    # tf_list.append(tensor[i])
+                    
+                # else:
+                    # tf_list.append(tf.Variable(-1000000000000))
+                    
+            # tensor = tf.Variable(tf_list)
+            
+            # print("trying to access tensi boi: ", tensor[0])
+            tensor = tshow(tensor, "tesnor in sample")
+            return tf.argmax(tensor, axis=-1)
         except KeyError:
             print("KeyError!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
             return tf.argmax(self.logits - tf.log(-tf.log(uniform)), axis=-1)
+            
+    def giveBatch(self, batch):
+        self.batch = batch
+        
+    # def new_tens(tensor):
+        
+            
+            
+        
     @classmethod
     def fromflat(cls, flat):
         return cls(flat)
+        
+def tshow(tensor, tag=None):
+    with tf.control_dependencies([tf.print(">>>>", tag if tag else tensor.name, tensor)]):
+        # generate a new name for the result tensor by tagging the existing name with _print
+        return tf.identity(tensor, name=tensor.name.split(':',1)[0]+"_print")
+        
 
 class MultiCategoricalPd(Pd):
     def __init__(self, nvec, flat):

@@ -130,6 +130,7 @@ class Model(object):
         self.train_model = train_model
         self.step_model = step_model
         self.step = step_model.step
+        self.batch = step_model.giveBatch
         self.value = step_model.value
         self.initial_state = step_model.initial_state
         self.save = functools.partial(tf_util.save_variables, sess=sess)
@@ -233,7 +234,7 @@ def learn(
         obs, states, rewards, masks, actions, values, epinfos = runner.run()
         #epinfobuf.extend(epinfos)
         action_masks = epinfos[0]
-        #print("action_masks in train: ", action_masks)
+        print("action_masks in train: ", action_masks)
         epinfobuf.extend(epinfos[1:])
 
         policy_loss, value_loss, policy_entropy = model.train(obs, states, rewards, masks, actions, values, action_masks=action_masks)
