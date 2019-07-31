@@ -153,7 +153,7 @@ class BernoulliPdType(PdType):
 class CategoricalPd(Pd):
     def __init__(self, logits):
         self.logits = logits
-        self.batch = 0
+        
     def flatparam(self):
         return self.logits
     def mode(self):
@@ -190,9 +190,11 @@ class CategoricalPd(Pd):
         try:
             valid_actions = tf.get_default_graph().get_tensor_by_name("a2c_model/action_mask_ph:0")
             #valid_actions = tshow(valid_actions, "valid actions in neglop")
+            labels = tf.boolean_mask(tf.stop_gradient(one_hot_actions), valid_actions[0], axis=1)
+            #labels = tshow(labels, "labeled_actionsin neglop")
             tensor = tf.nn.softmax_cross_entropy_with_logits_v2(
                     logits=tf.boolean_mask(self.logits, valid_actions[0], axis=1),
-                    labels=tf.boolean_mask(tf.stop_gradient(one_hot_actions), valid_actions[0], axis=1))
+                    labels=labels)
             #tensor = tshow(tensor, "tensor in neglop")
             return tensor
         except KeyError:
@@ -221,8 +223,8 @@ class CategoricalPd(Pd):
         #return tf.argmax(self.logits - tf.log(-tf.log(u)), axis=-1)
         try:
             valid_actions = tf.get_default_graph().get_tensor_by_name("a2c_model/action_mask_ph:0")
-            self.logits = tshow(self.logits, "logits in sample")
-            valid_actions= tshow(valid_actions, "valid actions in sample")
+            #self.logits = tshow(self.logits, "logits in sample")
+            #valid_actions= tshow(valid_actions, "valid actions in sample")
             
             tensor = tf.boolean_mask(self.logits - tf.log(-tf.log(uniform)), valid_actions[0], axis=1)
             # tf_list =  []
@@ -235,8 +237,12 @@ class CategoricalPd(Pd):
                     
             # tensor = tf.Variable(tf_list)
             
-            # print("trying to access tensi boi: ", tensor[0])
-            tensor = tshow(tensor, "tesnor in sample")
+            new_tens = tf.fill([1, 5], -10000000)
+            
+             #new_tens = map_fn(new_tensor, (tens, new_tens, valid_actions))
+            #print("new tensi boi: ", new_tens)
+            #new_tens = tf.show(new_tens, 
+            #tensor = tshow(tensor, "tesnor in sample")
             return tf.argmax(tensor, axis=-1)
         except KeyError:
             print("KeyError!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
@@ -245,9 +251,11 @@ class CategoricalPd(Pd):
     def giveBatch(self, batch):
         self.batch = batch
         
-    # def new_tens(tensor):
+    def new_tensor(tens, new_tens, valid_actions):
+        if valid_actions == 1:
+            new_tens = tens
         
-            
+        return new_tens           
             
         
     @classmethod

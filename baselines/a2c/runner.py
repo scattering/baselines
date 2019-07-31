@@ -53,7 +53,7 @@ class Runner(AbstractEnvRunner):
                 if info.get('valid_actions') is not None:
                     self.model.action_mask = np.array(info.get('valid_actions'), dtype=np.bool)
                     epinfos[0] = self.model.action_mask
-                    print("action mask:         ", self.model.action_mask)
+                    #print("action mask:         ", self.model.action_mask)
                     #epinfos[0].append(self.model.action_mask)
                 else:
                     # otherwise, assume all actions are valid

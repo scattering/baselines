@@ -39,7 +39,7 @@ class PolicyWithValue(object):
         self.state = tf.constant([])
         self.initial_state = None
         self.__dict__.update(tensors)
-        self._action_mask_ph = tf.placeholder(dtype=tf.bool, shape=(5, 5),
+        self._action_mask_ph = tf.placeholder(dtype=tf.bool, shape=(5, 198),
                                                       name="action_mask_ph")
         vf_latent = vf_latent if vf_latent is not None else latent
 
@@ -123,7 +123,7 @@ class PolicyWithValue(object):
         #print("self.neglop:             ", self.neglogp)
         #print("extra feed:              ", extra_feed)
          
-        a, v, state, neglogp = self._evaluate([self.action, self.vf, self.state, self.neglogp], observation, **extra_feed)
+        #a, v, state, neglogp = self._evaluate([self.action, self.vf, self.state, self.neglogp], observation, **extra_feed)
         #if action_mask is not None and isinstance(self.ac_space, Discrete):
         #if action_mask is not None:
         a, v, state, neglogp = self._evaluate([self.action, self.vf, self.state, self.neglogp], observation, action_mask, **extra_feed)
@@ -133,7 +133,7 @@ class PolicyWithValue(object):
              #a, v, state, neglogp = self._evaluate([self.action, self.vf, self.state, self.neglogp], observation, **extra_feed)
             
         
-        print("action from _evaluate: ", a)
+        #print("action from _evaluate: ", a)
         
         #while observation[0][a] == 1 and len(set(observation[0])) != 1:
              #count += 1

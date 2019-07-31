@@ -95,13 +95,13 @@ class Model(object):
             for step in range(len(obs)):
                 cur_lr = lr.value()
             #print("observations", obs)
-            print("has this hkl been chosen?")
-            for i in range (0, 4):
-                if obs[i][actions[i]] == 1:
-                    print("YOU HAVE CHOSEN AN INVALID ACTION!")
-                    print("the action is ", actions[i], " and you should feel ashamed.")
+            #print("has this hkl been chosen?")
+            #for i in range (0, 4):
+                #if obs[i][actions[i]] == 1:
+                    #print("YOU HAVE CHOSEN AN INVALID ACTION!")
+                    #print("the action is ", actions[i], " and you should feel ashamed.")
             
-            print("")
+            #print("")
             #print("acs", actions)
             if action_masks is not None:
                 action_masks = np.array(action_masks, dtype=np.bool).reshape(nsteps, len(obs[0]))
@@ -234,7 +234,7 @@ def learn(
         obs, states, rewards, masks, actions, values, epinfos = runner.run()
         #epinfobuf.extend(epinfos)
         action_masks = epinfos[0]
-        print("action_masks in train: ", action_masks)
+        #print("action_masks in train: ", action_masks)
         epinfobuf.extend(epinfos[1:])
 
         policy_loss, value_loss, policy_entropy = model.train(obs, states, rewards, masks, actions, values, action_masks=action_masks)
