@@ -117,8 +117,7 @@ def build_env(args):
 
         if env_type == 'mujoco':
             env = VecNormalize(env, use_tf=True)
-        print('writing session graph--I HOPEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE')
-        print(sess.graph)
+
         outfile = osp.join(args.storspot, 'tf') if args.storspot else './tf'
         file_writer = tf.summary.FileWriter(outfile, sess.graph)
         summary_op = tf.summary.merge_all()

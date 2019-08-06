@@ -168,35 +168,16 @@ class CategoricalPd(Pd):
     def mean(self):
         return tf.nn.softmax(self.logits)
     def neglogp(self, x):
-        # return tf.nn.sparse_softmax_cross_entropy_with_logits(logits=self.logits, labels=x)
-        # Note: we can't use sparse_softmax_cross_entropy_with_logits because
-        #       the implementation does not allow second-order derivatives...
-        # if x.dtype in {tf.uint8, tf.int32, tf.int64}:
-            # one-hot encoding
-            # x_shape_list = x.shape.as_list()
-            # logits_shape_list = self.logits.get_shape().as_list()[:-1]
-            # for xs, ls in zip(x_shape_list, logits_shape_list):
-                # if xs is not None and ls is not None:
-                    # assert xs == ls, 'shape mismatch: {} in x vs {} in logits'.format(xs, ls)
-
-            # x = tf.one_hot(x, self.logits.get_shape().as_list()[-1])
-        # else:
-            # # already encoded
-            # assert x.shape.as_list() == self.logits.shape.as_list()
-            # return tf.nn.softmax_cross_entropy_with_logits_v2(
-            # logits=self.logits,
-            # labels=x)
         one_hot_actions = tf.one_hot(x, self.logits.get_shape().as_list()[-1])
+        
+        #try to apply action mask, if there
         try:
             valid_actions = tf.get_default_graph().get_tensor_by_name("a2c_model/action_mask_ph:0")
-            #valid_actions = tshow(valid_actions, "valid actions in neglop")
-            labels = tf.boolean_mask(tf.stop_gradient(one_hot_actions), valid_actions[0], axis=1)
-            #labels = tshow(labels, "labeled_actionsin neglop")
-            tensor = tf.nn.softmax_cross_entropy_with_logits_v2(
+            labels = tf.boolean_mask(tf.stop_gradient(one_hot_actions), valid_actions[0], axis=1)            
+            return tf.nn.softmax_cross_entropy_with_logits_v2(
                     logits=tf.boolean_mask(self.logits, valid_actions[0], axis=1),
                     labels=labels)
-            #tensor = tshow(tensor, "tensor in neglop")
-            return tensor
+                    
         except KeyError:
             return tf.nn.softmax_cross_entropy_with_logits_v2(
                 logits=self.logits,
@@ -211,41 +192,22 @@ class CategoricalPd(Pd):
         z1 = tf.reduce_sum(ea1, axis=-1, keepdims=True)
         p0 = ea0 / z0
         return tf.reduce_sum(p0 * (a0 - tf.log(z0) - a1 + tf.log(z1)), axis=-1)
+        
     def entropy(self):
         a0 = self.logits - tf.reduce_max(self.logits, axis=-1, keepdims=True)
         ea0 = tf.exp(a0)
         z0 = tf.reduce_sum(ea0, axis=-1, keepdims=True)
         p0 = ea0 / z0
         return tf.reduce_sum(p0 * (tf.log(z0) - a0), axis=-1)
+        
     def sample(self):
-        print("                     LOGITS               LOGITS             LOGITS                         logits: ", self.logits)
+        #sample highest argument (apply boolean mask if there)
         uniform = tf.random_uniform(tf.shape(self.logits), dtype=self.logits.dtype)
-        #return tf.argmax(self.logits - tf.log(-tf.log(u)), axis=-1)
         try:
             valid_actions = tf.get_default_graph().get_tensor_by_name("a2c_model/action_mask_ph:0")
-            #self.logits = tshow(self.logits, "logits in sample")
-            #valid_actions= tshow(valid_actions, "valid actions in sample")
+            return tf.argmax(tf.boolean_mask(self.logits - tf.log(-tf.log(uniform)), valid_actions[0], axis=1), axis=-1)
             
-            tensor = tf.boolean_mask(self.logits - tf.log(-tf.log(uniform)), valid_actions[0], axis=1)
-            # tf_list =  []
-            # for i in range(tf.TensorShape(tensor[0])):
-                # if valid_actions[0][i] == tf.Variable(1):
-                    # tf_list.append(tensor[i])
-                    
-                # else:
-                    # tf_list.append(tf.Variable(-1000000000000))
-                    
-            # tensor = tf.Variable(tf_list)
-            
-            new_tens = tf.fill([1, 5], -10000000)
-            
-             #new_tens = map_fn(new_tensor, (tens, new_tens, valid_actions))
-            #print("new tensi boi: ", new_tens)
-            #new_tens = tf.show(new_tens, 
-            #tensor = tshow(tensor, "tesnor in sample")
-            return tf.argmax(tensor, axis=-1)
         except KeyError:
-            print("KeyError!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
             return tf.argmax(self.logits - tf.log(-tf.log(uniform)), axis=-1)
             
     def giveBatch(self, batch):

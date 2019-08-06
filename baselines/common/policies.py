@@ -10,6 +10,10 @@ import numpy as np
 
 import gym
 
+import os
+
+#Size of actions mask - change in run command 
+SHAPE = [int(v) for v in os.environ.get('GYM_SHAPE', '5,198').split(',')]
 
 class PolicyWithValue(object):
     """
@@ -35,11 +39,10 @@ class PolicyWithValue(object):
         """
 
         self.X = observations
-        print("x", self.X)
         self.state = tf.constant([])
         self.initial_state = None
         self.__dict__.update(tensors)
-        self._action_mask_ph = tf.placeholder(dtype=tf.bool, shape=(5, 198),
+        self._action_mask_ph = tf.placeholder(dtype=tf.bool, shape=SHAPE,
                                                       name="action_mask_ph")
         vf_latent = vf_latent if vf_latent is not None else latent
 
@@ -48,16 +51,12 @@ class PolicyWithValue(object):
 
         # Based on the action space, will select what probability distribution type
         self.pdtype = make_pdtype(env.action_space)
-        #if isinstance(ac_space, Discrete):
         
         self.pd, self.pi = self.pdtype.pdfromlatent(latent, init_scale=0.01)
 
         # Take an action
-        print("                     INIT                        INIT")
         self.action = self.pd.sample()
-        print("WE HAVE SAMPLED                              WE HAVE SAMPLED                     WE HAVE SAMPLED")
         
-
         # Calculate the neg log of our probability
         self.neglogp = self.pd.neglogp(self.action)
         self.sess = sess or tf.get_default_session()
@@ -71,30 +70,17 @@ class PolicyWithValue(object):
             self.vf = self.vf[:,0]
 
     def _evaluate(self, variables, observation, action_mask = None, **extra_feed):
-        #print("                             evaluating")
-        #actions = tf.placeholder(shape=(1,), dtype=tf.float32)
-        #masks = tf.placeholder(shape=(1,), dtype=tf.float32)
-        #masked_actions = actions * masks
-        #variables.insert(0, masked_actions)
-        n_batch = 1
-        #print("variables:               ", variables)
-        mask = (observation[0] +1) % 2 
         sess = self.sess
-        #if action_mask is None and isinstance(self.ac_space, Discrete):
-        #print("action mask: ", action_mask)
+
         if action_mask is None:
             action_mask = np.ones((5, len(observation[0])), dtype=np.bool)
-        #print(action_mask)
-        #feed_dict = {actions: np.ones((len(observation[0]))), masks: np.array(mask), self.X: adjust_shape(self.X, observation)}
-        #observation = np.zeros(2)
-        #self._action_mask_ph = tshow(self._action_mask_ph, "action mask ph in _evaluate")
+        
         feed_dict = {self.X: adjust_shape(self.X, observation), self._action_mask_ph: action_mask} #messing things up for other algs
         for inpt_name, data in extra_feed.items():
             if inpt_name in self.__dict__.keys():
                 inpt = self.__dict__[inpt_name]
                 if isinstance(inpt, tf.Tensor) and inpt._op.type == 'Placeholder':
                     feed_dict[inpt] = adjust_shape(inpt, data)
-        #print("                               feed dict:", feed_dict)
         
         return sess.run(variables, feed_dict)
         
@@ -114,34 +100,7 @@ class PolicyWithValue(object):
         -------
         (action, value estimate, next state, negative log likelihood of the action under current policy parameters) tuple
         """
-        #print("                         in policies.step")
-        #print("                         action: ", self.action)
-        #count = 1
-        #print("self.action:             ", self.action)
-        #print("self.vf:                 ", self.vf)
-        #print("self.state:              ", self.state)
-        #print("self.neglop:             ", self.neglogp)
-        #print("extra feed:              ", extra_feed)
-         
-        #a, v, state, neglogp = self._evaluate([self.action, self.vf, self.state, self.neglogp], observation, **extra_feed)
-        #if action_mask is not None and isinstance(self.ac_space, Discrete):
-        #if action_mask is not None:
         a, v, state, neglogp = self._evaluate([self.action, self.vf, self.state, self.neglogp], observation, action_mask, **extra_feed)
-        #else:
-            #return self.sess.run([self.action, self.value_flat, self.snew, self.neglogp],
-                                     #{self.obs_ph: obs, self.states_ph: state, self.dones_ph: mask})
-             #a, v, state, neglogp = self._evaluate([self.action, self.vf, self.state, self.neglogp], observation, **extra_feed)
-            
-        
-        #print("action from _evaluate: ", a)
-        
-        #while observation[0][a] == 1 and len(set(observation[0])) != 1:
-             #count += 1
-             #a, v, state, neglogp = self._evaluate([masked_actions, self.vf, self.state, self.neglogp], observation, **extra_feed)
-        #print("                         vf after evaluate: ", self.vf)
-        #print("                         state after evaluate: ", self.state)
-        #print("                         self.action after evaluate: ", self.action)
-        #print(count)
         if state.size == 0:
             state = None
         return a, v, state, neglogp

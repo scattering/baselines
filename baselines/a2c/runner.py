@@ -19,53 +19,35 @@ class Runner(AbstractEnvRunner):
         self.ob_dtype = model.train_model.X.dtype.as_numpy_dtype
 
     def run(self):
-        #print("                         in run function in Runner")
         # We initialize the lists that will contain the mb of experiences
         mb_obs, mb_rewards, mb_actions, mb_values, mb_dones = [],[],[],[],[]
         mb_states = self.states
         epinfos = [[]]
         for n in range(self.nsteps):
             # Given observations, take action and value (V(s))
-            # We already have self.obs because Runner superclass run self.obs[:] = env.reset() on init
-            #print("                     model.stepping")
-            # print(self.nsteps)
-            #print("action mask in runner: ", self.model.action_mask)            
+            # We already have self.obs because Runner superclass run self.obs[:] = env.reset() on init           
             actions, values, states, _ = self.model.step(self.obs, S=self.states, M=self.dones, action_mask=self.model.action_mask)
             self.model.batch(n)
-            #print("                     model.done stepping")
 
             # Append the experiences
             mb_obs.append(np.copy(self.obs))
             mb_actions.append(actions)
             mb_values.append(values)
             mb_dones.append(self.dones)
-            
-            #self.env.giveBatch(batch=n)
 
             # Take actions in env and look the results
             obs, rewards, dones, infos = self.env.step(actions)
             for info in infos:
-                # maybeepinfo = info.get('episode')
-                # if maybeepinfo: epinfos.append(maybeepinfo)
                 if info.get('episode') is not None:
                     epinfos.append(info.get('episode'))
                 # Did the env tell us what actions are valid?
                 if info.get('valid_actions') is not None:
                     self.model.action_mask = np.array(info.get('valid_actions'), dtype=np.bool)
                     epinfos[0] = self.model.action_mask
-                    #print("action mask:         ", self.model.action_mask)
-                    #epinfos[0].append(self.model.action_mask)
+
                 else:
                     # otherwise, assume all actions are valid
                     self.model.action_mask = None
-            
-            # print("invalid actions in runner are: ")
-            # counter = 0
-            # for boo in self.model.action_mask[0]:
-                # if not boo:
-                    # print(counter)
-                # counter += 1
-            # print("")
             
             self.states = states
             self.dones = dones
@@ -76,8 +58,6 @@ class Runner(AbstractEnvRunner):
         
 
         # Batch of steps to batch of rollouts
-        #print("mb_obd", mb_obs)
-        #print("batchobsshape", self.batch_ob_shape)
         mb_obs = np.asarray(mb_obs, dtype=self.ob_dtype).swapaxes(1, 0).reshape(self.batch_ob_shape)
         mb_rewards = np.asarray(mb_rewards, dtype=np.float32).swapaxes(1, 0)
         mb_actions = np.asarray(mb_actions, dtype=self.model.train_model.action.dtype.name).swapaxes(1, 0)

@@ -94,15 +94,7 @@ class Model(object):
             advs = rewards - values
             for step in range(len(obs)):
                 cur_lr = lr.value()
-            #print("observations", obs)
-            #print("has this hkl been chosen?")
-            #for i in range (0, 4):
-                #if obs[i][actions[i]] == 1:
-                    #print("YOU HAVE CHOSEN AN INVALID ACTION!")
-                    #print("the action is ", actions[i], " and you should feel ashamed.")
-            
-            #print("")
-            #print("acs", actions)
+                
             if action_masks is not None:
                 action_masks = np.array(action_masks, dtype=np.bool).reshape(nsteps, len(obs[0]))
 
@@ -214,12 +206,10 @@ def learn(
     # Instantiate the model object (that creates step_model and train_model)
     model = Model(policy=policy, env=env, nsteps=nsteps, ent_coef=ent_coef, vf_coef=vf_coef,
         max_grad_norm=max_grad_norm, lr=lr, alpha=alpha, epsilon=epsilon, total_timesteps=total_timesteps, lrschedule=lrschedule)
-    #print("                         made model")
     if load_path is not None:
         model.load(load_path)
 
     # Instantiate the runner object
-    #print("                         Starting Runner")
     runner = Runner(env, model, nsteps=nsteps, gamma=gamma)
     epinfobuf = deque(maxlen=100)
 
@@ -234,7 +224,6 @@ def learn(
         obs, states, rewards, masks, actions, values, epinfos = runner.run()
         #epinfobuf.extend(epinfos)
         action_masks = epinfos[0]
-        #print("action_masks in train: ", action_masks)
         epinfobuf.extend(epinfos[1:])
 
         policy_loss, value_loss, policy_entropy = model.train(obs, states, rewards, masks, actions, values, action_masks=action_masks)
