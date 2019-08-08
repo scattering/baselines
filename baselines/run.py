@@ -89,7 +89,6 @@ def build_env(args):
     nenv = args.num_env or ncpu
     alg = args.alg
     seed = args.seed
-    env_kwargs={'storspot': args.storspot}
 
     env_type, env_id = get_env_type(args)
 
