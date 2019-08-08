@@ -13,10 +13,8 @@ from gym.wrappers import FlattenDictWrapper
 from baselines import logger
 from baselines.bench import Monitor
 from baselines.common import set_global_seeds
-from baselines.common.atari_wrappers import make_atari, wrap_deepmind
 from baselines.common.vec_env.subproc_vec_env import SubprocVecEnv
 from baselines.common.vec_env.dummy_vec_env import DummyVecEnv
-from baselines.common import retro_wrappers
 from baselines.common.wrappers import ClipActionsWrapper
 
 def make_vec_env(env_id, env_type, num_env, seed,
@@ -72,8 +70,10 @@ def make_env(env_id, env_type, mpi_rank=0, subrank=0, seed=None, reward_scale=1.
         env_id = re.sub('.*:', '', env_id)
         importlib.import_module(module_name)
     if env_type == 'atari':
+        from baselines.common.atari_wrappers import make_atari  # delayed loading of deps
         env = make_atari(env_id)
     elif env_type == 'retro':
+        from baselines.common import retro_wrappers
         import retro
         gamestate = gamestate or retro.State.DEFAULT
         env = retro_wrappers.make_retro(game=env_id, max_episode_steps=10000, use_restricted_actions=retro.Actions.DISCRETE, state=gamestate)
@@ -91,8 +91,10 @@ def make_env(env_id, env_type, mpi_rank=0, subrank=0, seed=None, reward_scale=1.
 
 
     if env_type == 'atari':
+        from baselines.common.atari_wrappers import wrap_deepmind  # delayed loading of deps
         env = wrap_deepmind(env, **wrapper_kwargs)
     elif env_type == 'retro':
+        from baselines.common import retro_wrappers
         if 'frame_stack' not in wrapper_kwargs:
             wrapper_kwargs['frame_stack'] = 1
         env = retro_wrappers.wrap_deepmind_retro(env, **wrapper_kwargs)
@@ -101,6 +103,7 @@ def make_env(env_id, env_type, mpi_rank=0, subrank=0, seed=None, reward_scale=1.
         env = ClipActionsWrapper(env)
 
     if reward_scale != 1:
+        from baselines.common import retro_wrappers
         env = retro_wrappers.RewardScaler(env, reward_scale)
     try:
         env.giveRank(subrank=subrank)
@@ -177,7 +180,6 @@ def common_arg_parser():
     parser.add_argument('--save_video_length', help='Length of recorded video. Default: 200', default=200, type=int)
     parser.add_argument('--log_path', help='Directory to save learning curve data.', default=None, type=str)
     parser.add_argument('--play', default=False, action='store_true')
-    parser.add_argument('--storspot', default='', type=str, help='default storage location for additional tracked quantities')
     parser.add_argument('--profile', default=False, action='store_true', help='profile the training session')
     return parser
 

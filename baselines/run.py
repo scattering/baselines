@@ -56,8 +56,6 @@ def train(args, extra_args):
 
     total_timesteps = int(args.num_timesteps)
     seed = args.seed
-    print('build args', args)
-    env_kwargs={'storspot': args.storspot}
 
     learn = get_learn_function(args.alg)
     alg_kwargs = get_learn_function_defaults(args.alg, env_type)
@@ -113,14 +111,16 @@ def build_env(args):
         sess = get_session(config=config)
 
         flatten_dict_observations = alg not in {'her'}
-        env = make_vec_env(env_id, env_type, args.num_env or 1, seed, reward_scale=args.reward_scale, flatten_dict_observations=flatten_dict_observations, env_kwargs=env_kwargs)
+        env = make_vec_env(env_id, env_type, args.num_env or 1, seed, reward_scale=args.reward_scale, flatten_dict_observations=flatten_dict_observations)
 
         if env_type == 'mujoco':
             env = VecNormalize(env, use_tf=True)
-
-        outfile = osp.join(args.storspot, 'tf') if args.storspot else './tf'
-        file_writer = tf.summary.FileWriter(outfile, sess.graph)
-        summary_op = tf.summary.merge_all()
+        ## Failing to write structure---is it defined in another process?
+        #print('writing session graph--I HOPEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE')
+        #print(sess.graph)
+        #outfile = osp.join(args.storspot, 'tf') if args.storspot else './tf'
+        #file_writer = tf.summary.FileWriter(outfile, sess.graph)
+        #summary_op = tf.summary.merge_all()
 
     return env
 
@@ -236,7 +236,6 @@ def profile(fn, *args, **kw):
 
 def main(args):
     # configure logger, disable logging in child MPI processes (with rank > 0)
-
     arg_parser = common_arg_parser()
     args, unknown_args = arg_parser.parse_known_args(args)
     extra_args = parse_cmdline_kwargs(unknown_args)

@@ -2,6 +2,9 @@ from itertools import repeat
 import numpy as np
 from gym.spaces.space import Space
 
+import numpy as np
+
+from gym.spaces.space import Space
 
 class Bin_Discrete(Space):
     """A binary array of discrete spaces in :math:`\{ 0, 1, \dots, n-1 \}`. 
