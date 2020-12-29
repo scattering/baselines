@@ -8,49 +8,49 @@ if sys.version_info.major != 3:
 	  'Python {}. The installation will likely fail.'.format(sys.version_info.major))
 
 
-	extras = {
-	    'test': [
-		'filelock',
-		'pytest',
-		'pytest-forked',
-		'atari-py',
-		'matplotlib',
-		'pandas'
-	    ],
-	    'mpi': [
-		'mpi4py'
-	    ]
-	}
+extras = {
+	'test': [
+	'filelock',
+	'pytest',
+	'pytest-forked',
+	'atari-py',
+	'matplotlib',
+	'pandas'
+	],
+	'mpi': [
+	'mpi4py'
+	]
+}
 
-	all_deps = []
-	for group_name in extras:
-	    all_deps += extras[group_name]
+all_deps = []
+for group_name in extras:
+	all_deps += extras[group_name]
 
-	extras['all'] = all_deps
-	install_requires = [
-		  'gym>=0.10.0, <1.0.0',
-		  'scipy',
-		  'tqdm',
-		  'joblib',
-		  'cloudpickle',
-		  'click',
-		  'opencv-python',
-		  'tensorflow>=1.4',
-	      ]
-	# opencv is not available for PowerPC from pip
-	if platform.machine().startswith('ppc'):
-	    install_requires.remove('opencv-python')
+extras['all'] = all_deps
+install_requires = [
+	  'gym>=0.10.0, <1.0.0',
+	  'scipy',
+	  'tqdm',
+	  'joblib',
+	  'cloudpickle',
+	  'click',
+	  'opencv-python',
+	  'tensorflow>=1.4',
+	  ]
+# opencv is not available for PowerPC from pip
+if platform.machine().startswith('ppc'):
+	install_requires.remove('opencv-python')
 
-	setup(name='baselines',
-	      packages=[package for package in find_packages()
-			if package.startswith('baselines')],
-	      install_requires=install_requires,
-      extras_require=extras,
-      description='OpenAI baselines: high quality implementations of reinforcement learning algorithms',
-      author='OpenAI',
-      url='https://github.com/openai/baselines',
-      author_email='gym@openai.com',
-      version='0.1.6')
+setup(name='baselines',
+	  packages=[package for package in find_packages()
+		if package.startswith('baselines')],
+	  install_requires=install_requires,
+  extras_require=extras,
+  description='OpenAI baselines: high quality implementations of reinforcement learning algorithms',
+  author='OpenAI',
+  url='https://github.com/openai/baselines',
+  author_email='gym@openai.com',
+  version='0.1.6')
 
 
 # ensure there is some tensorflow build with version above 1.4
